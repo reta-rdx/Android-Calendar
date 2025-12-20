@@ -1,10 +1,17 @@
 package com.example.calendar.viewmodel
 
 import android.app.Application
+import android.content.ContentValues
+import android.content.Intent
+import android.net.Uri
+import android.os.Environment
+import android.provider.MediaStore
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.calendar.data.Event
 import com.example.calendar.data.EventRepository
+import com.example.calendar.util.ICalImporter
+import com.example.calendar.util.ICalExporter
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -12,7 +19,12 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import java.io.File
+import java.io.FileOutputStream
+import java.text.SimpleDateFormat
 import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 
 enum class ViewType {
     MONTH, WEEK, DAY
@@ -32,6 +44,12 @@ class CalendarViewModel(application: Application) : AndroidViewModel(application
     
     private val _selectedEvent = MutableStateFlow<Event?>(null)
     val selectedEvent: StateFlow<Event?> = _selectedEvent.asStateFlow()
+    
+    private val _importResult = MutableStateFlow<String?>(null)
+    val importResult: StateFlow<String?> = _importResult.asStateFlow()
+    
+    private val _exportResult = MutableStateFlow<String?>(null)
+    val exportResult: StateFlow<String?> = _exportResult.asStateFlow()
     
     init {
         // 观察事件变化
@@ -244,6 +262,89 @@ class CalendarViewModel(application: Application) : AndroidViewModel(application
             }
             loadEvents()
         }
+    }
+    
+    fun importFromFile(uri: Uri) {
+        viewModelScope.launch {
+            try {
+                val contentResolver = getApplication<Application>().contentResolver
+                val inputStream = contentResolver.openInputStream(uri)
+                val content = inputStream?.bufferedReader()?.use { it.readText() }
+                
+                if (content != null) {
+                    val importedEvents = ICalImporter.importFromICal(content)
+                    importedEvents.forEach { event ->
+                        val eventId = repository.insertEvent(event)
+                        if (event.reminderMinutes > 0) {
+                            val newEvent = event.copy(id = eventId)
+                            com.example.calendar.util.ReminderManager.scheduleReminder(getApplication(), newEvent)
+                        }
+                    }
+                    loadEvents() // 刷新显示
+                    
+                    _importResult.value = "成功导入 ${importedEvents.size} 个日程"
+                } else {
+                    _importResult.value = "导入失败: 无法读取文件内容"
+                }
+            } catch (e: Exception) {
+                _importResult.value = "导入失败: ${e.message}"
+            }
+        }
+    }
+    
+    fun exportEvents() {
+        viewModelScope.launch {
+            try {
+                val allEvents = repository.getAllEvents().first()
+                val icalContent = ICalExporter.exportToICal(allEvents)
+                
+                // 保存到文件
+                saveToFile(icalContent)
+                _exportResult.value = "成功导出 ${allEvents.size} 个日程"
+            } catch (e: Exception) {
+                _exportResult.value = "导出失败: ${e.message}"
+            }
+        }
+    }
+    
+    private fun saveToFile(content: String) {
+        try {
+            val dateFormat = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault())
+            val fileName = "calendar_export_${dateFormat.format(Date())}.ics"
+            
+            // 使用 MediaStore API 保存到 Downloads 目录
+            val contentResolver = getApplication<Application>().contentResolver
+            val contentValues = ContentValues().apply {
+                put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
+                put(MediaStore.MediaColumns.MIME_TYPE, "text/calendar")
+                put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
+            }
+            
+            val uri = contentResolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, contentValues)
+            uri?.let {
+                contentResolver.openOutputStream(it)?.use { outputStream ->
+                    outputStream.write(content.toByteArray())
+                }
+            }
+        } catch (e: Exception) {
+            // 如果 MediaStore 失败，尝试直接保存到应用目录
+            try {
+                val dateFormat = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault())
+                val fileName = "calendar_export_${dateFormat.format(Date())}.ics"
+                val file = File(getApplication<Application>().getExternalFilesDir(null), fileName)
+                file.writeText(content)
+            } catch (e2: Exception) {
+                throw e2
+            }
+        }
+    }
+    
+    fun clearImportResult() {
+        _importResult.value = null
+    }
+    
+    fun clearExportResult() {
+        _exportResult.value = null
     }
 }
 

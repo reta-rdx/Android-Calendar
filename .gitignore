@@ -13,3 +13,40 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Android Studio / IntelliJ IDEA
+.idea/
+*.iws
+*.ipr
+out/
+
+# Gradle
+.gradle/
+build/
+*/build/
+
+# Local configuration files
+local.properties
+android/local.properties
+
+# Kotlin
+.kotlin/
+
+# Test files
+*.ics
+test_*.ics
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# VS Code (optional)
+.vscode/
+
+# Logs
+*.log

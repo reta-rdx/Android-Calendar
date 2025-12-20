@@ -1,8 +1,11 @@
 package com.example.calendar.ui.screens
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -27,6 +30,32 @@ fun CalendarScreen(
     val currentDate by viewModel.currentDate.collectAsState()
     val viewType by viewModel.viewType.collectAsState()
     val events by viewModel.events.collectAsState()
+    val importResult by viewModel.importResult.collectAsState()
+    val exportResult by viewModel.exportResult.collectAsState()
+    
+    // 文件选择器
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        uri?.let { viewModel.importFromFile(it) }
+    }
+    
+    var showMenu by remember { mutableStateOf(false) }
+    
+    // 显示导入/导出结果
+    LaunchedEffect(importResult) {
+        importResult?.let {
+            // 这里可以显示 Snackbar 或 Toast
+            viewModel.clearImportResult()
+        }
+    }
+    
+    LaunchedEffect(exportResult) {
+        exportResult?.let {
+            // 这里可以显示 Snackbar 或 Toast
+            viewModel.clearExportResult()
+        }
+    }
     
     Scaffold(
         topBar = {
@@ -55,6 +84,32 @@ fun CalendarScreen(
                     }
                 },
                 actions = {
+                    // 添加菜单按钮
+                    IconButton(onClick = { showMenu = true }) {
+                        Icon(Icons.Default.MoreVert, contentDescription = "更多")
+                    }
+                    
+                    // 下拉菜单
+                    DropdownMenu(
+                        expanded = showMenu,
+                        onDismissRequest = { showMenu = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("导入日程") },
+                            onClick = {
+                                showMenu = false
+                                launcher.launch("text/calendar")
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("导出日程") },
+                            onClick = {
+                                showMenu = false
+                                viewModel.exportEvents()
+                            }
+                        )
+                    }
+                    
                     IconButton(onClick = { viewModel.navigateToToday() }) {
                         Text("今天")
                     }
@@ -74,20 +129,17 @@ fun CalendarScreen(
                 NavigationBarItem(
                     selected = viewType == ViewType.MONTH,
                     onClick = { viewModel.setViewType(ViewType.MONTH) },
-                    icon = { Text("月") },
-                    label = { Text("月视图") }
+                    icon = { Text("月") }
                 )
                 NavigationBarItem(
                     selected = viewType == ViewType.WEEK,
                     onClick = { viewModel.setViewType(ViewType.WEEK) },
-                    icon = { Text("周") },
-                    label = { Text("周视图") }
+                    icon = { Text("周") }
                 )
                 NavigationBarItem(
                     selected = viewType == ViewType.DAY,
                     onClick = { viewModel.setViewType(ViewType.DAY) },
-                    icon = { Text("日") },
-                    label = { Text("日视图") }
+                    icon = { Text("日") }
                 )
             }
         }

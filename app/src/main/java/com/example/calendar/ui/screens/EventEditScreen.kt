@@ -1,5 +1,6 @@
 package com.example.calendar.ui.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -12,7 +13,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.calendar.data.Event
+import com.example.calendar.ui.components.TimePickerDialog
+import java.text.SimpleDateFormat
 import java.util.Calendar
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -30,12 +34,26 @@ fun EventEditScreen(
     val reminderMinutesState = remember { mutableStateOf(event?.reminderMinutes ?: 0) }
     
     val startDate = remember { mutableStateOf(event?.getStartCalendar() ?: initialDate ?: Calendar.getInstance()) }
-    val endDate = remember { mutableStateOf(event?.getEndCalendar() ?: initialDate ?: Calendar.getInstance().apply { add(Calendar.HOUR_OF_DAY, 1) }) }
+    val endDate = remember { 
+        mutableStateOf(
+            event?.getEndCalendar() ?: run {
+                val defaultEndDate = (initialDate ?: Calendar.getInstance()).clone() as Calendar
+                defaultEndDate.add(Calendar.HOUR_OF_DAY, 1)
+                defaultEndDate
+            }
+        )
+    }
     
     val startHour = remember { mutableStateOf(startDate.value.get(Calendar.HOUR_OF_DAY)) }
     val startMinute = remember { mutableStateOf(startDate.value.get(Calendar.MINUTE)) }
     val endHour = remember { mutableStateOf(endDate.value.get(Calendar.HOUR_OF_DAY)) }
     val endMinute = remember { mutableStateOf(endDate.value.get(Calendar.MINUTE)) }
+    
+    // 时间选择器对话框状态
+    var showStartTimePicker by remember { mutableStateOf(false) }
+    var showEndTimePicker by remember { mutableStateOf(false) }
+    
+    val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
     
     Scaffold(
         topBar = {
@@ -128,66 +146,61 @@ fun EventEditScreen(
             }
             
             if (!isAllDayState.value) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly
+                // 开始时间选择
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { showStartTimePicker = true },
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                 ) {
-                    Column {
-                        Text("开始时间")
-                        Row {
-                            OutlinedTextField(
-                                value = startHour.value.toString(),
-                                onValueChange = { 
-                                    it.toIntOrNull()?.takeIf { h -> h in 0..23 }?.let { 
-                                        startHour.value = it 
-                                    }
-                                },
-                                modifier = Modifier.width(60.dp),
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                label = { Text("时") }
-                            )
-                            Text(":", modifier = Modifier.padding(horizontal = 8.dp, vertical = 16.dp))
-                            OutlinedTextField(
-                                value = startMinute.value.toString(),
-                                onValueChange = { 
-                                    it.toIntOrNull()?.takeIf { m -> m in 0..59 }?.let { 
-                                        startMinute.value = it 
-                                    }
-                                },
-                                modifier = Modifier.width(60.dp),
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                label = { Text("分") }
-                            )
-                        }
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "开始时间",
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                        Text(
+                            text = timeFormat.format(startDate.value.apply {
+                                set(Calendar.HOUR_OF_DAY, startHour.value)
+                                set(Calendar.MINUTE, startMinute.value)
+                            }.time),
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.primary
+                        )
                     }
-                    
-                    Column {
-                        Text("结束时间")
-                        Row {
-                            OutlinedTextField(
-                                value = endHour.value.toString(),
-                                onValueChange = { 
-                                    it.toIntOrNull()?.takeIf { h -> h in 0..23 }?.let { 
-                                        endHour.value = it 
-                                    }
-                                },
-                                modifier = Modifier.width(60.dp),
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                label = { Text("时") }
-                            )
-                            Text(":", modifier = Modifier.padding(horizontal = 8.dp, vertical = 16.dp))
-                            OutlinedTextField(
-                                value = endMinute.value.toString(),
-                                onValueChange = { 
-                                    it.toIntOrNull()?.takeIf { m -> m in 0..59 }?.let { 
-                                        endMinute.value = it 
-                                    }
-                                },
-                                modifier = Modifier.width(60.dp),
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                label = { Text("分") }
-                            )
-                        }
+                }
+                
+                // 结束时间选择
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { showEndTimePicker = true },
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "结束时间",
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                        Text(
+                            text = timeFormat.format(endDate.value.apply {
+                                set(Calendar.HOUR_OF_DAY, endHour.value)
+                                set(Calendar.MINUTE, endMinute.value)
+                            }.time),
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.primary
+                        )
                     }
                 }
             }
@@ -246,6 +259,49 @@ fun EventEditScreen(
                 }
             }
         }
+        
+        // 开始时间选择器对话框
+        TimePickerDialog(
+            showDialog = showStartTimePicker,
+            hour = startHour.value,
+            minute = startMinute.value,
+            onTimeSelected = { hour, minute ->
+                startHour.value = hour
+                startMinute.value = minute
+                
+                // 自动调整结束时间为开始时间加一小时
+                val newEndHour = if (hour == 23) 0 else hour + 1
+                val newEndDay = if (hour == 23) 1 else 0
+                
+                endHour.value = newEndHour
+                endMinute.value = minute
+                
+                // 如果跨天了，需要调整结束日期
+                if (newEndDay > 0) {
+                    endDate.value = (endDate.value.clone() as Calendar).apply {
+                        add(Calendar.DAY_OF_MONTH, 1)
+                    }
+                } else {
+                    // 确保结束日期和开始日期相同（如果没有跨天）
+                    endDate.value = startDate.value.clone() as Calendar
+                }
+            },
+            onDismiss = { showStartTimePicker = false },
+            title = "选择开始时间"
+        )
+        
+        // 结束时间选择器对话框
+        TimePickerDialog(
+            showDialog = showEndTimePicker,
+            hour = endHour.value,
+            minute = endMinute.value,
+            onTimeSelected = { hour, minute ->
+                endHour.value = hour
+                endMinute.value = minute
+            },
+            onDismiss = { showEndTimePicker = false },
+            title = "选择结束时间"
+        )
     }
 }
 
