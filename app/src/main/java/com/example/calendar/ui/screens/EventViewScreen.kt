@@ -157,7 +157,7 @@ fun EventViewScreen(
             }
             
             // 提醒
-            if (event.reminderMinutes > 0) {
+            if (event.reminderMinutes != 0) {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
@@ -171,14 +171,28 @@ fun EventViewScreen(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Spacer(modifier = Modifier.height(4.dp))
+                        
+                        val absMinutes = kotlin.math.abs(event.reminderMinutes)
+                        val isAlarmReminder = event.reminderMinutes > 0
+                        val reminderTypeText = if (isAlarmReminder) "闹钟提醒" else "通知提醒"
+                        
                         Text(
                             text = when {
-                                event.reminderMinutes < 60 -> "${event.reminderMinutes}分钟前"
-                                event.reminderMinutes < 1440 -> "${event.reminderMinutes / 60}小时前"
-                                else -> "${event.reminderMinutes / 1440}天前"
+                                absMinutes < 60 -> "${absMinutes}分钟前 ($reminderTypeText)"
+                                absMinutes < 1440 -> "${absMinutes / 60}小时前 ($reminderTypeText)"
+                                else -> "${absMinutes / 1440}天前 ($reminderTypeText)"
                             },
                             style = MaterialTheme.typography.bodyLarge
                         )
+                        
+                        if (isAlarmReminder) {
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "将播放闹钟声音并振动",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            )
+                        }
                     }
                 }
             }

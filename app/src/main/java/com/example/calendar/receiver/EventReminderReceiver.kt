@@ -3,42 +3,55 @@ package com.example.calendar.receiver
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.os.Build
-import androidx.core.app.NotificationCompat
-import androidx.core.app.NotificationManagerCompat
-import androidx.core.content.ContextCompat
+import android.util.Log
+import com.example.calendar.AlarmActivity
 import com.example.calendar.util.NotificationHelper
+import com.example.calendar.util.PermissionChecker
 
 class EventReminderReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        NotificationHelper.createNotificationChannel(context)
+        Log.d("EventReminderReceiver", "收到事件提醒广播")
         
         val eventId = intent.getLongExtra("event_id", -1)
         val eventTitle = intent.getStringExtra("event_title") ?: "日程提醒"
-        val eventDescription = intent.getStringExtra("event_description") ?: ""
+        val eventDescription = intent.getStringExtra("event_description")
+        val eventTime = intent.getLongExtra("event_time", System.currentTimeMillis())
+        val isAlarm = intent.getBooleanExtra("is_alarm", false)
+        val isSnooze = intent.getBooleanExtra("is_snooze", false)
         
-        val notification = NotificationCompat.Builder(context, NotificationHelper.CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
-            .setContentTitle(eventTitle)
-            .setContentText(eventDescription.ifEmpty { "您有一个即将开始的日程" })
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setAutoCancel(true)
-            .build()
+        Log.d("EventReminderReceiver", "事件信息: ID=$eventId, 标题=$eventTitle, 是否闹钟=$isAlarm, 是否稍后提醒=$isSnooze")
         
-        val notificationManager = NotificationManagerCompat.from(context)
-        
-        // 检查通知权限（Android 13+）
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(
-                    context,
-                    android.Manifest.permission.POST_NOTIFICATIONS
-                ) == android.content.pm.PackageManager.PERMISSION_GRANTED
-            ) {
-                notificationManager.notify(eventId.toInt(), notification)
-            }
+        if (isAlarm) {
+            // 启动全屏闹钟界面
+            val alarmIntent = AlarmActivity.createIntent(
+                context = context,
+                eventId = eventId,
+                eventTitle = eventTitle,
+                eventDescription = eventDescription,
+                eventTime = eventTime
+            )
+            context.startActivity(alarmIntent)
+            Log.d("EventReminderReceiver", "已启动闹钟界面")
         } else {
-            // Android 13 以下版本不需要权限检查
-            notificationManager.notify(eventId.toInt(), notification)
+            // 发送普通通知
+            // 确保通知渠道已创建
+            NotificationHelper.createNotificationChannel(context)
+            
+            // 检查通知权限
+            if (!PermissionChecker.hasNotificationPermission(context)) {
+                Log.w("EventReminderReceiver", "没有通知权限，无法发送提醒")
+                return
+            }
+            
+            // 发送通知
+            NotificationHelper.sendEventNotification(
+                context = context,
+                eventTitle = eventTitle,
+                eventDescription = eventDescription,
+                notificationId = eventId.toInt()
+            )
+            
+            Log.d("EventReminderReceiver", "事件提醒通知已发送")
         }
     }
 }

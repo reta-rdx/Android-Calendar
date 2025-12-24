@@ -45,14 +45,12 @@ fun CalendarScreen(
     // 显示导入/导出结果
     LaunchedEffect(importResult) {
         importResult?.let {
-            // 这里可以显示 Snackbar 或 Toast
             viewModel.clearImportResult()
         }
     }
     
     LaunchedEffect(exportResult) {
         exportResult?.let {
-            // 这里可以显示 Snackbar 或 Toast
             viewModel.clearExportResult()
         }
     }
@@ -144,11 +142,7 @@ fun CalendarScreen(
             }
         }
     ) { padding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-        ) {
+        Box(modifier = Modifier.padding(padding)) {
             when (viewType) {
                 ViewType.MONTH -> {
                     MonthView(
@@ -156,7 +150,7 @@ fun CalendarScreen(
                         events = events,
                         onDateClick = { date ->
                             viewModel.setCurrentDate(date)
-                            viewModel.setViewType(ViewType.DAY)
+                            onAddEvent()
                         },
                         onEventClick = onEventClick
                     )

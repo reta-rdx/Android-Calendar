@@ -61,34 +61,41 @@ class CalendarViewModel(application: Application) : AndroidViewModel(application
                 
                 when (_viewType.value) {
                     ViewType.MONTH -> {
-                        val startOfMonth = cal.clone() as Calendar
-                        startOfMonth.set(Calendar.DAY_OF_MONTH, 1)
-                        startOfMonth.set(Calendar.HOUR_OF_DAY, 0)
-                        startOfMonth.set(Calendar.MINUTE, 0)
-                        startOfMonth.set(Calendar.SECOND, 0)
-                        startOfMonth.set(Calendar.MILLISECOND, 0)
+                        // 月视图需要包含显示的所有天数（包括上个月和下个月的部分）
+                        val firstDayOfMonth = cal.clone() as Calendar
+                        firstDayOfMonth.set(Calendar.DAY_OF_MONTH, 1)
                         
-                        val endOfMonth = cal.clone() as Calendar
-                        endOfMonth.add(Calendar.MONTH, 1)
-                        endOfMonth.set(Calendar.DAY_OF_MONTH, 1)
-                        endOfMonth.add(Calendar.DAY_OF_MONTH, -1)
-                        endOfMonth.set(Calendar.HOUR_OF_DAY, 23)
-                        endOfMonth.set(Calendar.MINUTE, 59)
-                        endOfMonth.set(Calendar.SECOND, 59)
+                        val firstDayOfWeek = firstDayOfMonth.get(Calendar.DAY_OF_WEEK)
+                        val startOffset = firstDayOfWeek - Calendar.SUNDAY
                         
-                        startTime = startOfMonth.timeInMillis
-                        endTime = endOfMonth.timeInMillis
+                        val startOfDisplay = firstDayOfMonth.clone() as Calendar
+                        startOfDisplay.add(Calendar.DAY_OF_MONTH, -startOffset)
+                        startOfDisplay.set(Calendar.HOUR_OF_DAY, 0)
+                        startOfDisplay.set(Calendar.MINUTE, 0)
+                        startOfDisplay.set(Calendar.SECOND, 0)
+                        startOfDisplay.set(Calendar.MILLISECOND, 0)
+                        
+                        val endOfDisplay = startOfDisplay.clone() as Calendar
+                        endOfDisplay.add(Calendar.DAY_OF_MONTH, 41) // 6周 = 42天
+                        endOfDisplay.set(Calendar.HOUR_OF_DAY, 23)
+                        endOfDisplay.set(Calendar.MINUTE, 59)
+                        endOfDisplay.set(Calendar.SECOND, 59)
+                        
+                        startTime = startOfDisplay.timeInMillis
+                        endTime = endOfDisplay.timeInMillis
                     }
                     ViewType.WEEK -> {
                         val startOfWeek = cal.clone() as Calendar
-                        startOfWeek.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY)
+                        val dayOfWeek = startOfWeek.get(Calendar.DAY_OF_WEEK)
+                        val daysFromSunday = dayOfWeek - Calendar.SUNDAY
+                        startOfWeek.add(Calendar.DAY_OF_MONTH, -daysFromSunday)
                         startOfWeek.set(Calendar.HOUR_OF_DAY, 0)
                         startOfWeek.set(Calendar.MINUTE, 0)
                         startOfWeek.set(Calendar.SECOND, 0)
                         startOfWeek.set(Calendar.MILLISECOND, 0)
                         
                         val endOfWeek = startOfWeek.clone() as Calendar
-                        endOfWeek.add(Calendar.DAY_OF_WEEK, 6)
+                        endOfWeek.add(Calendar.DAY_OF_MONTH, 6)
                         endOfWeek.set(Calendar.HOUR_OF_DAY, 23)
                         endOfWeek.set(Calendar.MINUTE, 59)
                         endOfWeek.set(Calendar.SECOND, 59)
@@ -167,34 +174,41 @@ class CalendarViewModel(application: Application) : AndroidViewModel(application
             
             when (_viewType.value) {
                 ViewType.MONTH -> {
-                    val startOfMonth = cal.clone() as Calendar
-                    startOfMonth.set(Calendar.DAY_OF_MONTH, 1)
-                    startOfMonth.set(Calendar.HOUR_OF_DAY, 0)
-                    startOfMonth.set(Calendar.MINUTE, 0)
-                    startOfMonth.set(Calendar.SECOND, 0)
-                    startOfMonth.set(Calendar.MILLISECOND, 0)
+                    // 月视图需要包含显示的所有天数（包括上个月和下个月的部分）
+                    val firstDayOfMonth = cal.clone() as Calendar
+                    firstDayOfMonth.set(Calendar.DAY_OF_MONTH, 1)
                     
-                    val endOfMonth = cal.clone() as Calendar
-                    endOfMonth.add(Calendar.MONTH, 1)
-                    endOfMonth.set(Calendar.DAY_OF_MONTH, 1)
-                    endOfMonth.add(Calendar.DAY_OF_MONTH, -1)
-                    endOfMonth.set(Calendar.HOUR_OF_DAY, 23)
-                    endOfMonth.set(Calendar.MINUTE, 59)
-                    endOfMonth.set(Calendar.SECOND, 59)
+                    val firstDayOfWeek = firstDayOfMonth.get(Calendar.DAY_OF_WEEK)
+                    val startOffset = firstDayOfWeek - Calendar.SUNDAY
                     
-                    startTime = startOfMonth.timeInMillis
-                    endTime = endOfMonth.timeInMillis
+                    val startOfDisplay = firstDayOfMonth.clone() as Calendar
+                    startOfDisplay.add(Calendar.DAY_OF_MONTH, -startOffset)
+                    startOfDisplay.set(Calendar.HOUR_OF_DAY, 0)
+                    startOfDisplay.set(Calendar.MINUTE, 0)
+                    startOfDisplay.set(Calendar.SECOND, 0)
+                    startOfDisplay.set(Calendar.MILLISECOND, 0)
+                    
+                    val endOfDisplay = startOfDisplay.clone() as Calendar
+                    endOfDisplay.add(Calendar.DAY_OF_MONTH, 41) // 6周 = 42天
+                    endOfDisplay.set(Calendar.HOUR_OF_DAY, 23)
+                    endOfDisplay.set(Calendar.MINUTE, 59)
+                    endOfDisplay.set(Calendar.SECOND, 59)
+                    
+                    startTime = startOfDisplay.timeInMillis
+                    endTime = endOfDisplay.timeInMillis
                 }
                 ViewType.WEEK -> {
                     val startOfWeek = cal.clone() as Calendar
-                    startOfWeek.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY)
+                    val dayOfWeek = startOfWeek.get(Calendar.DAY_OF_WEEK)
+                    val daysFromSunday = dayOfWeek - Calendar.SUNDAY
+                    startOfWeek.add(Calendar.DAY_OF_MONTH, -daysFromSunday)
                     startOfWeek.set(Calendar.HOUR_OF_DAY, 0)
                     startOfWeek.set(Calendar.MINUTE, 0)
                     startOfWeek.set(Calendar.SECOND, 0)
                     startOfWeek.set(Calendar.MILLISECOND, 0)
                     
                     val endOfWeek = startOfWeek.clone() as Calendar
-                    endOfWeek.add(Calendar.DAY_OF_WEEK, 6)
+                    endOfWeek.add(Calendar.DAY_OF_MONTH, 6)
                     endOfWeek.set(Calendar.HOUR_OF_DAY, 23)
                     endOfWeek.set(Calendar.MINUTE, 59)
                     endOfWeek.set(Calendar.SECOND, 59)

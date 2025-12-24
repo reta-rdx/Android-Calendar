@@ -15,6 +15,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.calendar.data.Event
+import com.example.calendar.util.CalendarUtils.isSameDay
+import com.example.calendar.util.LunarCalendarUtil
 import java.util.Calendar
 import java.util.Locale
 
@@ -26,10 +28,16 @@ fun WeekView(
     onEventClick: (Event) -> Unit
 ) {
     val calendar = currentDate.clone() as Calendar
-    calendar.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY)
+    
+    // 获取当前周的第一天（周日）
+    val dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK)
+    val daysFromSunday = dayOfWeek - Calendar.SUNDAY
+    calendar.add(Calendar.DAY_OF_MONTH, -daysFromSunday)
     
     Column(
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(8.dp)
     ) {
         // 星期标题
         Row(
@@ -78,9 +86,10 @@ fun RowScope.WeekDayColumn(
             .clickable { onClick() },
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        val weekDays = listOf("周一", "周二", "周三", "周四", "周五", "周六", "周日")
-        val dayOfWeek = (dayCalendar.get(Calendar.DAY_OF_WEEK) - Calendar.MONDAY + 7) % 7
+        val weekDays = listOf("周日", "周一", "周二", "周三", "周四", "周五", "周六")
+        val dayOfWeek = dayCalendar.get(Calendar.DAY_OF_WEEK) - Calendar.SUNDAY
         
+        // 星期标题
         Text(
             text = weekDays[dayOfWeek],
             fontSize = 12.sp,
@@ -89,13 +98,31 @@ fun RowScope.WeekDayColumn(
             else MaterialTheme.colorScheme.primary
         )
         
-        Text(
-            text = dayCalendar.get(Calendar.DAY_OF_MONTH).toString(),
-            fontSize = 18.sp,
-            fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal,
-            color = if (isToday) MaterialTheme.colorScheme.onPrimaryContainer
-            else MaterialTheme.colorScheme.onSurface
-        )
+        Spacer(modifier = Modifier.height(4.dp))
+        
+        // 日期和农历（紧贴）
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = dayCalendar.get(Calendar.DAY_OF_MONTH).toString(),
+                fontSize = 24.sp,
+                fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal,
+                color = if (isToday) MaterialTheme.colorScheme.onPrimaryContainer
+                else MaterialTheme.colorScheme.onSurface
+            )
+            
+            // 农历日期（紧贴日期）
+            Text(
+                text = LunarCalendarUtil.getSimpleLunarDate(dayCalendar),
+                fontSize = 8.sp,
+                color = if (isToday) {
+                    MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                } else {
+                    MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
+                }
+            )
+        }
         
         Spacer(modifier = Modifier.height(8.dp))
         

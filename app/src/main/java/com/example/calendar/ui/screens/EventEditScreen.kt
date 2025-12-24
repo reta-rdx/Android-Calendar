@@ -205,46 +205,149 @@ fun EventEditScreen(
                 }
             }
             
-            Row(
+            // 提醒设置
+            Card(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                )
             ) {
-                Text("提醒")
-                var expanded by remember { mutableStateOf(false) }
-                val reminderOptions = listOf(0, 5, 10, 15, 30, 60, 120)
-                val reminderText = when (reminderMinutesState.value) {
-                    0 -> "不提醒"
-                    else -> "${reminderMinutesState.value}分钟前"
-                }
-                
-                ExposedDropdownMenuBox(
-                    expanded = expanded,
-                    onExpandedChange = { expanded = !expanded }
+                Column(
+                    modifier = Modifier.padding(16.dp)
                 ) {
-                    OutlinedTextField(
-                        value = reminderText,
-                        onValueChange = {},
-                        readOnly = true,
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                        modifier = Modifier.menuAnchor()
+                    Text(
+                        text = "提醒设置",
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.padding(bottom = 12.dp)
                     )
-                    ExposedDropdownMenu(
-                        expanded = expanded,
-                        onDismissRequest = { expanded = false }
+                    
+                    // 提醒时间选择
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        reminderOptions.forEach { minutes ->
-                            DropdownMenuItem(
-                                text = { Text(if (minutes == 0) "不提醒" else "${minutes}分钟前") },
-                                onClick = {
-                                    reminderMinutesState.value = minutes
-                                    expanded = false
-                                }
+                        Text("提醒时间")
+                        var expanded by remember { mutableStateOf(false) }
+                        val reminderOptions = listOf(0, 5, 10, 15, 30, 60, 120)
+                        val reminderText = when (reminderMinutesState.value) {
+                            0 -> "不提醒"
+                            else -> "${reminderMinutesState.value}分钟前"
+                        }
+                        
+                        ExposedDropdownMenuBox(
+                            expanded = expanded,
+                            onExpandedChange = { expanded = !expanded }
+                        ) {
+                            OutlinedTextField(
+                                value = reminderText,
+                                onValueChange = {},
+                                readOnly = true,
+                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                                modifier = Modifier.menuAnchor()
                             )
+                            ExposedDropdownMenu(
+                                expanded = expanded,
+                                onDismissRequest = { expanded = false }
+                            ) {
+                                reminderOptions.forEach { minutes ->
+                                    DropdownMenuItem(
+                                        text = { Text(if (minutes == 0) "不提醒" else "${minutes}分钟前") },
+                                        onClick = {
+                                            reminderMinutesState.value = minutes
+                                            expanded = false
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    
+                    // 提醒类型选择（只有在设置了提醒时间时才显示）
+                    if (reminderMinutesState.value > 0) {
+                        Spacer(modifier = Modifier.height(12.dp))
+                        
+                        Text(
+                            text = "提醒类型",
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                        
+                        var isAlarmReminder by remember { mutableStateOf(true) }
+                        
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            // 闹钟提醒选项
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier
+                                    .clickable { isAlarmReminder = true }
+                                    .weight(1f)
+                            ) {
+                                RadioButton(
+                                    selected = isAlarmReminder,
+                                    onClick = { isAlarmReminder = true }
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Column {
+                                    Text(
+                                        text = "闹钟提醒",
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                    Text(
+                                        text = "全屏闹钟+声音+振动",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                    )
+                                }
+                            }
+                            
+                            // 通知提醒选项
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier
+                                    .clickable { isAlarmReminder = false }
+                                    .weight(1f)
+                            ) {
+                                RadioButton(
+                                    selected = !isAlarmReminder,
+                                    onClick = { isAlarmReminder = false }
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Column {
+                                    Text(
+                                        text = "通知提醒",
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                    Text(
+                                        text = "静默通知栏提醒",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                    )
+                                }
+                            }
+                        }
+                        
+                        // 更新reminderMinutesState的值来标记提醒类型
+                        // 正数表示闹钟提醒，负数表示通知提醒
+                        LaunchedEffect(isAlarmReminder, reminderMinutesState.value) {
+                            if (reminderMinutesState.value > 0) {
+                                val absValue = kotlin.math.abs(reminderMinutesState.value)
+                                reminderMinutesState.value = if (isAlarmReminder) absValue else -absValue
+                            }
+                        }
+                        
+                        // 根据当前值设置isAlarmReminder的初始状态
+                        LaunchedEffect(Unit) {
+                            isAlarmReminder = reminderMinutesState.value > 0
                         }
                     }
                 }
             }
+            
+            Spacer(modifier = Modifier.height(16.dp))
             
             if (event != null && onDelete != null) {
                 Spacer(modifier = Modifier.height(16.dp))

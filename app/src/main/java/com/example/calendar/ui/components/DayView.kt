@@ -17,7 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.calendar.data.Event
-import com.example.calendar.util.LunarCalendar
+import com.example.calendar.util.CalendarUtils.isSameDay
 import java.util.Calendar
 import java.util.Locale
 
@@ -52,21 +52,34 @@ fun DayView(
                     color = if (isToday) MaterialTheme.colorScheme.onPrimaryContainer
                     else MaterialTheme.colorScheme.onSurface
                 )
-                val weekDays = listOf("周一", "周二", "周三", "周四", "周五", "周六", "周日")
-                val dayOfWeek = (currentDate.get(Calendar.DAY_OF_WEEK) - Calendar.MONDAY + 7) % 7
+                val weekDays = listOf("周日", "周一", "周二", "周三", "周四", "周五", "周六")
+                val dayOfWeek = currentDate.get(Calendar.DAY_OF_WEEK) - Calendar.SUNDAY
                 Text(
                     text = weekDays[dayOfWeek],
                     fontSize = 16.sp,
                     color = if (isToday) MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
                     else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                 )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = LunarCalendar.getFullLunarInfo(currentDate),
-                    fontSize = 14.sp,
-                    color = if (isToday) MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.6f)
-                    else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                )
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                // 农历信息卡片
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(
+                            if (isToday) MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.1f)
+                            else MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                        )
+                        .padding(horizontal = 12.dp, vertical = 6.dp)
+                ) {
+                    Text(
+                        text = com.example.calendar.util.LunarCalendarUtil.getFullLunarInfo(currentDate),
+                        fontSize = 14.sp,
+                        color = if (isToday) MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                        else MaterialTheme.colorScheme.primary.copy(alpha = 0.9f),
+                        fontWeight = FontWeight.Medium
+                    )
+                }
             }
         }
         

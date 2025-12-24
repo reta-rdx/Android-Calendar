@@ -13,20 +13,22 @@ android {
         applicationId = "com.example.calendar"
         minSdk = 24
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 2
+        versionName = "1.5"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
         release {
-            isMinifyEnabled = true
-            isShrinkResources = true
+            isMinifyEnabled = false  // 暂时禁用混淆来调试崩溃问题
+            isShrinkResources = false  // 暂时禁用资源压缩
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            // 添加调试信息
+            isDebuggable = true
         }
         debug {
             isMinifyEnabled = false
@@ -60,6 +62,10 @@ android {
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
+        }
+        // 确保所有jar文件都被正确打包
+        jniLibs {
+            useLegacyPackaging = false
         }
     }
 }
@@ -104,7 +110,13 @@ dependencies {
     // Gson for JSON parsing
     implementation(libs.gson)
     
+    // 农历库 - 使用本地jar包
+    implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar"))))
+    
     testImplementation(libs.junit)
+    testImplementation(libs.kotest.runner.junit5)
+    testImplementation(libs.kotest.assertions.core)
+    testImplementation(libs.kotest.property)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
