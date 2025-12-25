@@ -331,14 +331,25 @@ class CalendarViewModel(application: Application) : AndroidViewModel(application
             val contentValues = ContentValues().apply {
                 put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
                 put(MediaStore.MediaColumns.MIME_TYPE, "text/calendar")
-                put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                    put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
+                }
             }
             
-            val uri = contentResolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, contentValues)
-            uri?.let {
-                contentResolver.openOutputStream(it)?.use { outputStream ->
+            val uri = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                contentResolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, contentValues)
+            } else {
+                // 对于API 28及以下，使用外部存储
+                null
+            }
+            
+            if (uri != null) {
+                contentResolver.openOutputStream(uri)?.use { outputStream ->
                     outputStream.write(content.toByteArray())
                 }
+            } else {
+                // 降级到传统方式
+                throw Exception("MediaStore not available, fallback to legacy method")
             }
         } catch (e: Exception) {
             // 如果 MediaStore 失败，尝试直接保存到应用目录

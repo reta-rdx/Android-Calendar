@@ -232,7 +232,7 @@ fun EventEditScreen(
                         val reminderOptions = listOf(0, 5, 10, 15, 30, 60, 120)
                         val reminderText = when (reminderMinutesState.value) {
                             0 -> "不提醒"
-                            else -> "${reminderMinutesState.value}分钟前"
+                            else -> "${kotlin.math.abs(reminderMinutesState.value)}分钟前"
                         }
                         
                         ExposedDropdownMenuBox(
@@ -254,7 +254,11 @@ fun EventEditScreen(
                                     DropdownMenuItem(
                                         text = { Text(if (minutes == 0) "不提醒" else "${minutes}分钟前") },
                                         onClick = {
-                                            reminderMinutesState.value = minutes
+                                            // 保持当前的提醒类型（正数为闹钟，负数为通知）
+                                            val currentIsAlarm = reminderMinutesState.value >= 0
+                                            reminderMinutesState.value = if (minutes == 0) 0 else {
+                                                if (currentIsAlarm) minutes else -minutes
+                                            }
                                             expanded = false
                                         }
                                     )
@@ -264,7 +268,7 @@ fun EventEditScreen(
                     }
                     
                     // 提醒类型选择（只有在设置了提醒时间时才显示）
-                    if (reminderMinutesState.value > 0) {
+                    if (reminderMinutesState.value != 0) {
                         Spacer(modifier = Modifier.height(12.dp))
                         
                         Text(
@@ -273,7 +277,9 @@ fun EventEditScreen(
                             modifier = Modifier.padding(bottom = 8.dp)
                         )
                         
-                        var isAlarmReminder by remember { mutableStateOf(true) }
+                        var isAlarmReminder by remember { 
+                            mutableStateOf(reminderMinutesState.value >= 0) 
+                        }
                         
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -333,15 +339,10 @@ fun EventEditScreen(
                         // 更新reminderMinutesState的值来标记提醒类型
                         // 正数表示闹钟提醒，负数表示通知提醒
                         LaunchedEffect(isAlarmReminder, reminderMinutesState.value) {
-                            if (reminderMinutesState.value > 0) {
+                            if (reminderMinutesState.value != 0) {
                                 val absValue = kotlin.math.abs(reminderMinutesState.value)
                                 reminderMinutesState.value = if (isAlarmReminder) absValue else -absValue
                             }
-                        }
-                        
-                        // 根据当前值设置isAlarmReminder的初始状态
-                        LaunchedEffect(Unit) {
-                            isAlarmReminder = reminderMinutesState.value > 0
                         }
                     }
                 }

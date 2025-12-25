@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
@@ -45,6 +46,15 @@ class AlarmActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         
+        // 设置返回键处理 - 防止用户通过返回键关闭闹钟
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                // 防止用户通过返回键关闭闹钟，必须点击按钮
+                // 这里可以选择允许或禁止，目前选择禁止
+                // 如果要允许，可以调用 finish()
+            }
+        })
+        
         val eventId = intent.getLongExtra(EXTRA_EVENT_ID, -1)
         val eventTitle = intent.getStringExtra(EXTRA_EVENT_TITLE) ?: "日程提醒"
         val eventDescription = intent.getStringExtra(EXTRA_EVENT_DESCRIPTION)
@@ -79,11 +89,5 @@ class AlarmActivity : ComponentActivity() {
                 }
             }
         }
-    }
-    
-    override fun onBackPressed() {
-        // 防止用户通过返回键关闭闹钟，必须点击按钮
-        // 可以选择允许或禁止
-        super.onBackPressed()
     }
 }
