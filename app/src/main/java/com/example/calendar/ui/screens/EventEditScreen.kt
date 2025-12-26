@@ -73,13 +73,21 @@ fun EventEditScreen(
                             if (!isAllDayState.value) {
                                 startCal.set(Calendar.HOUR_OF_DAY, startHour.value)
                                 startCal.set(Calendar.MINUTE, startMinute.value)
+                                startCal.set(Calendar.SECOND, 0)
+                                startCal.set(Calendar.MILLISECOND, 0)
                                 endCal.set(Calendar.HOUR_OF_DAY, endHour.value)
                                 endCal.set(Calendar.MINUTE, endMinute.value)
+                                endCal.set(Calendar.SECOND, 0)
+                                endCal.set(Calendar.MILLISECOND, 0)
                             } else {
                                 startCal.set(Calendar.HOUR_OF_DAY, 0)
                                 startCal.set(Calendar.MINUTE, 0)
+                                startCal.set(Calendar.SECOND, 0)
+                                startCal.set(Calendar.MILLISECOND, 0)
                                 endCal.set(Calendar.HOUR_OF_DAY, 23)
                                 endCal.set(Calendar.MINUTE, 59)
+                                endCal.set(Calendar.SECOND, 59)
+                                endCal.set(Calendar.MILLISECOND, 999)
                             }
                             
                             val newEvent = Event(
@@ -373,6 +381,12 @@ fun EventEditScreen(
                 startHour.value = hour
                 startMinute.value = minute
                 
+                // 更新Calendar对象并清零秒数和毫秒数
+                startDate.value.set(Calendar.HOUR_OF_DAY, hour)
+                startDate.value.set(Calendar.MINUTE, minute)
+                startDate.value.set(Calendar.SECOND, 0)
+                startDate.value.set(Calendar.MILLISECOND, 0)
+                
                 // 自动调整结束时间为开始时间加一小时
                 val newEndHour = if (hour == 23) 0 else hour + 1
                 val newEndDay = if (hour == 23) 1 else 0
@@ -384,10 +398,19 @@ fun EventEditScreen(
                 if (newEndDay > 0) {
                     endDate.value = (endDate.value.clone() as Calendar).apply {
                         add(Calendar.DAY_OF_MONTH, 1)
+                        set(Calendar.HOUR_OF_DAY, newEndHour)
+                        set(Calendar.MINUTE, minute)
+                        set(Calendar.SECOND, 0)
+                        set(Calendar.MILLISECOND, 0)
                     }
                 } else {
                     // 确保结束日期和开始日期相同（如果没有跨天）
-                    endDate.value = startDate.value.clone() as Calendar
+                    endDate.value = (startDate.value.clone() as Calendar).apply {
+                        set(Calendar.HOUR_OF_DAY, newEndHour)
+                        set(Calendar.MINUTE, minute)
+                        set(Calendar.SECOND, 0)
+                        set(Calendar.MILLISECOND, 0)
+                    }
                 }
             },
             onDismiss = { showStartTimePicker = false },
@@ -402,6 +425,12 @@ fun EventEditScreen(
             onTimeSelected = { hour, minute ->
                 endHour.value = hour
                 endMinute.value = minute
+                
+                // 更新Calendar对象并清零秒数和毫秒数
+                endDate.value.set(Calendar.HOUR_OF_DAY, hour)
+                endDate.value.set(Calendar.MINUTE, minute)
+                endDate.value.set(Calendar.SECOND, 0)
+                endDate.value.set(Calendar.MILLISECOND, 0)
             },
             onDismiss = { showEndTimePicker = false },
             title = "选择结束时间"
